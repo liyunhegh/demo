@@ -1,4 +1,4 @@
-DEFAULT_START_PORT=20000                         #默认起始端口
+DEFAULT_START_PORT=21000                         #默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   #默认socks账号
 DEFAULT_SOCKS_PASSWORD="passwordb"               #默认socks密码
 DEFAULT_WS_PATH="/ws"                            #默认ws路径
@@ -41,7 +41,7 @@ config_xray() {
 		exit 1
 	fi
 
-    read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
+	read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
 	START_PORT=${START_PORT:-$DEFAULT_START_PORT}
 
 	read -p "每个IP生成的端口数量 (默认 $DEFAULT_PORTS_PER_IP): " PORTS_PER_IP
@@ -61,47 +61,46 @@ config_xray() {
 	fi
 
 	for ((i = 0; i < ${#IP_ADDRESSES[@]}; i++)); do
-        for ((j = 0; j < PORTS_PER_IP; j++)); do
-            config_content+="[[inbounds]]\n"
-            config_content+="port = $((START_PORT + i))\n"
-            config_content+="protocol = \"$config_type\"\n"
-            config_content+="tag = \"tag_$((i + 1))\"\n"
-            config_content+="[inbounds.settings]\n"
-            if [ "$config_type" == "socks" ]; then
-                config_content+="auth = \"password\"\n"
-                config_content+="udp = true\n"
-                config_content+="ip = \"${IP_ADDRESSES[i]}\"\n"
-                config_content+="[[inbounds.settings.accounts]]\n"
-                config_content+="user = \"$SOCKS_USERNAME\"\n"
-                config_content+="pass = \"$SOCKS_PASSWORD\"\n"
-            elif [ "$config_type" == "vmess" ]; then
-                config_content+="[[inbounds.settings.clients]]\n"
-                config_content+="id = \"$UUID\"\n"
-                config_content+="[inbounds.streamSettings]\n"
-                config_content+="network = \"ws\"\n"
-                config_content+="[inbounds.streamSettings.wsSettings]\n"
-                config_content+="path = \"$WS_PATH\"\n\n"
-            fi
-            config_content+="[[outbounds]]\n"
-            config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
-            config_content+="protocol = \"freedom\"\n"
-            config_content+="tag = \"tag_$((i + 1))\"\n\n"
-            config_content+="[[routing.rules]]\n"
-            config_content+="type = \"field\"\n"
-            config_content+="inboundTag = \"tag_$((i + 1))\"\n"
-            config_content+="outboundTag = \"tag_$((i + 1))\"\n\n\n"
-        done
-    done
+		for ((j = 0; j < PORTS_PER_IP; j++)); do
+			config_content+="[[inbounds]]\n"
+			config_content+="port = $((START_PORT + j))\n"
+			config_content+="protocol = \"$config_type\"\n"
+			config_content+="tag = \"tag_$((j + 1))\"\n"
+			config_content+="[inbounds.settings]\n"
+			if [ "$config_type" == "socks" ]; then
+				config_content+="auth = \"password\"\n"
+				config_content+="udp = true\n"
+				config_content+="ip = \"${IP_ADDRESSES[i]}\"\n"
+				config_content+="[[inbounds.settings.accounts]]\n"
+				config_content+="user = \"$SOCKS_USERNAME\"\n"
+				config_content+="pass = \"$SOCKS_PASSWORD\"\n"
+			elif [ "$config_type" == "vmess" ]; then
+				config_content+="[[inbounds.settings.clients]]\n"
+				config_content+="id = \"$UUID\"\n"
+				config_content+="[inbounds.streamSettings]\n"
+				config_content+="network = \"ws\"\n"
+				config_content+="[inbounds.streamSettings.wsSettings]\n"
+				config_content+="path = \"$WS_PATH\"\n\n"
+			fi
+			config_content+="[[outbounds]]\n"
+			config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
+			config_content+="protocol = \"freedom\"\n"
+			config_content+="tag = \"tag_$((j + 1))\"\n\n"
+			config_content+="[[routing.rules]]\n"
+			config_content+="type = \"field\"\n"
+			config_content+="inboundTag = \"tag_$((j + 1))\"\n"
+			config_content+="outboundTag = \"tag_$((j + 1))\"\n\n\n"
+		done
+	done
 	echo -e "$config_content" >/etc/xrayL/config.toml
 	systemctl restart xrayL.service
 	systemctl --no-pager status xrayL.service
 	echo ""
 	echo "生成 $config_type 配置完成"
 
-
-    echo "每个IP生成端口数量: $PORTS_PER_IP"
-    echo "起始端口: $START_PORT"
-    echo "结束端口: $((START_PORT + ${#IP_ADDRESSES[@]} * PORTS_PER_IP - 1))"
+	echo "每个IP生成端口数量: $PORTS_PER_IP"
+	echo "起始端口: $START_PORT"
+	echo "结束端口: $((START_PORT + ${#IP_ADDRESSES[@]} * PORTS_PER_IP - 1))"
 	if [ "$config_type" == "socks" ]; then
 		echo "socks账号:$SOCKS_USERNAME"
 		echo "socks密码:$SOCKS_PASSWORD"
