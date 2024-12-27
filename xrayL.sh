@@ -1,9 +1,9 @@
-DEFAULT_START_PORT=20001                         #默认起始端口
+DEFAULT_START_PORT=20000                         #默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   #默认socks账号
 DEFAULT_SOCKS_PASSWORD="passwordb"               #默认socks密码
 DEFAULT_WS_PATH="/ws"                            #默认ws路径
 DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) #默认随机UUID
-DEFAULT_PORTS_PER_IP=1                           #每个IP生成的端口数量
+DEFAULT_BIND_PORT_COUNT=1
 
 IP_ADDRESSES=($(hostname -I))
 
@@ -44,8 +44,8 @@ config_xray() {
 	read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
 	START_PORT=${START_PORT:-$DEFAULT_START_PORT}
 
-	read -p "每个IP生成的端口数量 (默认 $DEFAULT_PORTS_PER_IP): " PORTS_PER_IP
-	PORTS_PER_IP=${PORTS_PER_IP:-$DEFAULT_PORTS_PER_IP}
+	read -p "每个ip绑定多少个port (默认 $DEFAULT_BIND_PORT_COUNT): " BIND_PORT_COUNT
+	BIND_PORT_COUNT=${BIND_PORT_COUNT:-$DEFAULT_BIND_PORT_COUNT}
 
 	if [ "$config_type" == "socks" ]; then
 		read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
@@ -61,11 +61,12 @@ config_xray() {
 	fi
 
 	for ((i = 0; i < ${#IP_ADDRESSES[@]}; i++)); do
-		for ((j = 0; j < PORTS_PER_IP; j++)); do
+		for ((j = 0; j < BIND_PORT_COUNT; j++)); do
+			SID=i * BIND_PORT_COUNT + j
 			config_content+="[[inbounds]]\n"
-			config_content+="port = $((START_PORT + j))\n"
+			config_content+="port = $((START_PORT + SID))\n"
 			config_content+="protocol = \"$config_type\"\n"
-			config_content+="tag = \"tag_$((j + 1))\"\n"
+			config_content+="tag = \"tag_$((SID + 1))\"\n"
 			config_content+="[inbounds.settings]\n"
 			if [ "$config_type" == "socks" ]; then
 				config_content+="auth = \"password\"\n"
@@ -85,11 +86,11 @@ config_xray() {
 			config_content+="[[outbounds]]\n"
 			config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
 			config_content+="protocol = \"freedom\"\n"
-			config_content+="tag = \"tag_$((j + 1))\"\n\n"
+			config_content+="tag = \"tag_$((SID + 1))\"\n\n"
 			config_content+="[[routing.rules]]\n"
 			config_content+="type = \"field\"\n"
-			config_content+="inboundTag = \"tag_$((j + 1))\"\n"
-			config_content+="outboundTag = \"tag_$((j + 1))\"\n\n\n"
+			config_content+="inboundTag = \"tag_$((SID + 1))\"\n"
+			config_content+="outboundTag = \"tag_$((SID + 1))\"\n\n\n"
 		done
 	done
 	echo -e "$config_content" >/etc/xrayL/config.toml
@@ -97,10 +98,9 @@ config_xray() {
 	systemctl --no-pager status xrayL.service
 	echo ""
 	echo "生成 $config_type 配置完成"
-
-	echo "每个IP生成端口数量: $PORTS_PER_IP"
-	echo "起始端口: $START_PORT"
-	echo "结束端口: $((START_PORT + ${#IP_ADDRESSES[@]} * PORTS_PER_IP - 1))"
+	echo "起始端口:$START_PORT"
+	echo "结束端口:$(($START_PORT + $SID))"
+	echo "每个IP生成端口数量: $BIND_PORT_COUNT"
 	if [ "$config_type" == "socks" ]; then
 		echo "socks账号:$SOCKS_USERNAME"
 		echo "socks密码:$SOCKS_PASSWORD"
