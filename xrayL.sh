@@ -43,7 +43,7 @@ config_xray() {
 
     read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
 	START_PORT=${START_PORT:-$DEFAULT_START_PORT}
-    
+
 	read -p "每个IP生成的端口数量 (默认 $DEFAULT_PORTS_PER_IP): " PORTS_PER_IP
 	PORTS_PER_IP=${PORTS_PER_IP:-$DEFAULT_PORTS_PER_IP}
 
@@ -99,9 +99,9 @@ config_xray() {
 	echo "生成 $config_type 配置完成"
 
 
-    echo "每个IP生成端口数量: $DEFAULT_PORTS_PER_IP"
+    echo "每个IP生成端口数量: $PORTS_PER_IP"
     echo "起始端口: $START_PORT"
-    echo "结束端口: $((START_PORT + ${#IP_ADDRESSES[@]} * DEFAULT_PORTS_PER_IP - 1))"
+    echo "结束端口: $((START_PORT + ${#IP_ADDRESSES[@]} * PORTS_PER_IP - 1))"
 	if [ "$config_type" == "socks" ]; then
 		echo "socks账号:$SOCKS_USERNAME"
 		echo "socks密码:$SOCKS_PASSWORD"
