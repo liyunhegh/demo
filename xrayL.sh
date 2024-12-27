@@ -44,7 +44,7 @@ config_xray() {
 	read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
 	START_PORT=${START_PORT:-$DEFAULT_START_PORT}
 
-	read -p "每个ip绑定多少个port (默认 $DEFAULT_BIND_PORT_COUNT): " BIND_PORT_COUNT
+    read -p "每个ip绑定多少个port (默认 $DEFAULT_BIND_PORT_COUNT): " BIND_PORT_COUNT
 	BIND_PORT_COUNT=${BIND_PORT_COUNT:-$DEFAULT_BIND_PORT_COUNT}
 
 	if [ "$config_type" == "socks" ]; then
@@ -61,37 +61,37 @@ config_xray() {
 	fi
 
 	for ((i = 0; i < ${#IP_ADDRESSES[@]}; i++)); do
-		for ((j = 0; j < BIND_PORT_COUNT; j++)); do
-			SID=i * BIND_PORT_COUNT + j
-			config_content+="[[inbounds]]\n"
-			config_content+="port = $((START_PORT + SID))\n"
-			config_content+="protocol = \"$config_type\"\n"
-			config_content+="tag = \"tag_$((SID + 1))\"\n"
-			config_content+="[inbounds.settings]\n"
-			if [ "$config_type" == "socks" ]; then
-				config_content+="auth = \"password\"\n"
-				config_content+="udp = true\n"
-				config_content+="ip = \"${IP_ADDRESSES[i]}\"\n"
-				config_content+="[[inbounds.settings.accounts]]\n"
-				config_content+="user = \"$SOCKS_USERNAME\"\n"
-				config_content+="pass = \"$SOCKS_PASSWORD\"\n"
-			elif [ "$config_type" == "vmess" ]; then
-				config_content+="[[inbounds.settings.clients]]\n"
-				config_content+="id = \"$UUID\"\n"
-				config_content+="[inbounds.streamSettings]\n"
-				config_content+="network = \"ws\"\n"
-				config_content+="[inbounds.streamSettings.wsSettings]\n"
-				config_content+="path = \"$WS_PATH\"\n\n"
-			fi
-			config_content+="[[outbounds]]\n"
-			config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
-			config_content+="protocol = \"freedom\"\n"
-			config_content+="tag = \"tag_$((SID + 1))\"\n\n"
-			config_content+="[[routing.rules]]\n"
-			config_content+="type = \"field\"\n"
-			config_content+="inboundTag = \"tag_$((SID + 1))\"\n"
-			config_content+="outboundTag = \"tag_$((SID + 1))\"\n\n\n"
-		done
+        for((j = 0; j < BIND_PORT_COUNT; j++)); do
+            SID=$((i * BIND_PORT_COUNT + j))
+            config_content+="[[inbounds]]\n"
+            config_content+="port = $((START_PORT + SID))\n"
+            config_content+="protocol = \"$config_type\"\n"
+            config_content+="tag = \"tag_$((SID + 1))\"\n"
+            config_content+="[inbounds.settings]\n"
+            if [ "$config_type" == "socks" ]; then
+                config_content+="auth = \"password\"\n"
+                config_content+="udp = true\n"
+                config_content+="ip = \"${IP_ADDRESSES[i]}\"\n"
+                config_content+="[[inbounds.settings.accounts]]\n"
+                config_content+="user = \"$SOCKS_USERNAME\"\n"
+                config_content+="pass = \"$SOCKS_PASSWORD\"\n"
+            elif [ "$config_type" == "vmess" ]; then
+                config_content+="[[inbounds.settings.clients]]\n"
+                config_content+="id = \"$UUID\"\n"
+                config_content+="[inbounds.streamSettings]\n"
+                config_content+="network = \"ws\"\n"
+                config_content+="[inbounds.streamSettings.wsSettings]\n"
+                config_content+="path = \"$WS_PATH\"\n\n"
+            fi
+            config_content+="[[outbounds]]\n"
+            config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
+            config_content+="protocol = \"freedom\"\n"
+            config_content+="tag = \"tag_$((SID + 1))\"\n\n"
+            config_content+="[[routing.rules]]\n"
+            config_content+="type = \"field\"\n"
+            config_content+="inboundTag = \"tag_$((SID + 1))\"\n"
+            config_content+="outboundTag = \"tag_$((SID + 1))\"\n\n\n"
+        done
 	done
 	echo -e "$config_content" >/etc/xrayL/config.toml
 	systemctl restart xrayL.service
